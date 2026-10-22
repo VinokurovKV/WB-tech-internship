@@ -4,6 +4,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   Paper,
 } from "@mui/material";
@@ -12,9 +13,21 @@ import type { User } from "../types/user";
 
 interface UsersTableProps {
   users: User[];
+  totalUsers: number;
+  page: number;
+  rowsPerPage: number;
+  onPageChange: (page: number) => void;
+  onRowsPerPageChange: (value: number) => void;
 }
 
-export default function UsersTable({ users }: UsersTableProps) {
+export default function UsersTable({
+  users,
+  totalUsers,
+  page,
+  rowsPerPage,
+  onPageChange,
+  onRowsPerPageChange,
+}: UsersTableProps) {
   return (
     <TableContainer component={Paper}>
       <Table>
@@ -42,6 +55,18 @@ export default function UsersTable({ users }: UsersTableProps) {
           ))}
         </TableBody>
       </Table>
+
+      <TablePagination
+        component="div"
+        count={totalUsers}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        rowsPerPageOptions={[10, 25, 50]}
+        onPageChange={(_, newPage) => onPageChange(newPage)}
+        onRowsPerPageChange={(event) =>
+          onRowsPerPageChange(Number(event.target.value))
+        }
+      />
     </TableContainer>
   );
 }
