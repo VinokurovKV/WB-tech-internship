@@ -10,3 +10,5 @@ export interface User {
   hobbies: string;
   nationality: string;
 }
+
+export type UserFormData = Omit<User, "id" | "createdAt">;

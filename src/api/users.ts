@@ -1,4 +1,4 @@
-import type { User } from "../types/user";
+import type { User, UserFormData } from "../types/user";
 
 const API_URL = import.meta.env.VITE_MOCK_API_URL;
 
@@ -21,4 +21,30 @@ export async function getUsersCount(): Promise<number> {
 
   const users: User[] = await response.json();
   return users.length;
+}
+
+export async function createUser(data: UserFormData): Promise<User> {
+  const response = await fetch(`${API_URL}/users`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...data,
+      createdAt: new Date().toISOString(),
+    }),
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+
+    console.error("MockAPI error:", {
+      status: response.status,
+      message,
+    });
+
+    throw new Error(`Failed to create user: ${response.status}`);
+  }
+
+  return response.json();
 }
