@@ -48,3 +48,22 @@ export async function createUser(data: UserFormData): Promise<User> {
 
   return response.json();
 }
+
+export async function updateUser(
+  id: string,
+  data: UserFormData,
+): Promise<User> {
+  const response = await fetch(`${API_URL}/users/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update user");
+  }
+
+  return response.json();
+}

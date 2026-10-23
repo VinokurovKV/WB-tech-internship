@@ -117,6 +117,8 @@ export default function UserFormDialog({
     if (!loading) onClose();
   };
 
+  const isEditing = initialValues !== undefined;
+
   return (
     <Dialog
       open={open}
@@ -159,7 +161,7 @@ export default function UserFormDialog({
               color: { xs: "#29164F", sm: "#FFFFFF" },
             }}
           >
-            Добавить пользователя
+            {isEditing ? "Редактировать пользователя" : "Добавить пользователя"}
           </DialogTitle>
 
           <Typography
@@ -170,7 +172,9 @@ export default function UserFormDialog({
               color: "rgba(255,255,255,0.85)",
             }}
           >
-            Заполните информацию о новом пользователе
+            {isEditing
+              ? "Измените информацию о пользователе"
+              : "Заполните информацию о новом пользователе"}
           </Typography>
         </Box>
 

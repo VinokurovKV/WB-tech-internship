@@ -25,6 +25,7 @@ interface UsersTableProps {
   rowsPerPage: number;
   onPageChange: (page: number) => void;
   onRowsPerPageChange: (value: number) => void;
+  onEditUser: (user: User) => void;
 }
 
 const genderLabels: Record<string, string> = {
@@ -42,6 +43,7 @@ export default function UsersTable({
   rowsPerPage,
   onPageChange,
   onRowsPerPageChange,
+  onEditUser,
 }: UsersTableProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -156,12 +158,11 @@ export default function UsersTable({
                     <IconButton
                       size="small"
                       aria-label={`Редактировать ${user.firstName} ${user.lastName}`}
-                      disabled
+                      onClick={() => onEditUser(user)}
                       sx={{
                         color: "#7C3AC6",
-                        "&.Mui-disabled": {
-                          color: "#7C3AC6",
-                          opacity: 0.65,
+                        "&:hover": {
+                          bgcolor: "#F2E7FF",
                         },
                       }}
                     >

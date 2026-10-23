@@ -10,7 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 
-import { createUser, getUsers, getUsersCount } from "./api/users";
+import { createUser, getUsers, getUsersCount, updateUser } from "./api/users";
 import UsersTable from "./components/UsersTable";
 import UserFormDialog from "./components/UserFormDialog";
 import type { User, UserFormData } from "./types/user";
@@ -25,6 +25,8 @@ function App() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -75,12 +77,33 @@ function App() {
     setPage(0);
   };
 
-  const handleCreateUser = async (data: UserFormData) => {
-    await createUser(data);
+  const handleAddUser = () => {
+    setSelectedUser(null);
+    setDialogOpen(true);
+  };
 
-    setLoading(true);
-    setError(false);
-    setPage(0);
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setSelectedUser(null);
+  };
+
+  const handleSubmitUser = async (data: UserFormData) => {
+    if (selectedUser) {
+      const updatedUser = await updateUser(selectedUser.id, data);
+
+      setUsers((prev) =>
+        prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)),
+      );
+    } else {
+      await createUser(data);
+      setPage(0);
+    }
+
     setRefreshKey((prev) => prev + 1);
   };
 
@@ -160,7 +183,7 @@ function App() {
 
             <Fab
               aria-label="Добавить пользователя"
-              onClick={() => setDialogOpen(true)}
+              onClick={handleAddUser}
               sx={{
                 display: { xs: "flex", sm: "none" },
                 flexShrink: 0,
@@ -177,7 +200,7 @@ function App() {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => setDialogOpen(true)}
+              onClick={handleAddUser}
               sx={{
                 display: { xs: "none", sm: "inline-flex" },
                 bgcolor: "#FFFFFF",
@@ -244,6 +267,7 @@ function App() {
               rowsPerPage={rowsPerPage}
               onPageChange={handlePageChange}
               onRowsPerPageChange={handleRowsPerPageChange}
+              onEditUser={handleEditUser}
             />
           )}
         </Box>
@@ -252,8 +276,22 @@ function App() {
       {dialogOpen && (
         <UserFormDialog
           open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          onSubmit={handleCreateUser}
+          initialValues={
+            selectedUser
+              ? {
+                  firstName: selectedUser.firstName,
+                  lastName: selectedUser.lastName,
+                  email: selectedUser.email,
+                  phoneNumber: selectedUser.phoneNumber,
+                  age: selectedUser.age,
+                  gender: selectedUser.gender,
+                  nationality: selectedUser.nationality,
+                  hobbies: selectedUser.hobbies,
+                }
+              : undefined
+          }
+          onClose={handleCloseDialog}
+          onSubmit={handleSubmitUser}
         />
       )}
     </Box>
