@@ -18,8 +18,6 @@ import {
 
 import type { User } from "../types/user";
 
-import { useNavigate } from "react-router";
-
 interface UsersTableProps {
   users: User[];
   totalUsers: number;
@@ -28,6 +26,7 @@ interface UsersTableProps {
   onPageChange: (page: number) => void;
   onRowsPerPageChange: (value: number) => void;
   onEditUser: (user: User) => void;
+  onOpenUser: (user: User) => void;
 }
 
 const genderLabels: Record<string, string> = {
@@ -46,11 +45,10 @@ export default function UsersTable({
   onPageChange,
   onRowsPerPageChange,
   onEditUser,
+  onOpenUser,
 }: UsersTableProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  const navigate = useNavigate();
 
   return (
     <Paper
@@ -112,10 +110,10 @@ export default function UsersTable({
                 <TableRow
                   key={user.id}
                   hover
-                  onClick={() => navigate(`/users/${user.id}`)}
+                  onClick={() => onOpenUser(user)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
-                      navigate(`/users/${user.id}`);
+                      onOpenUser(user);
                     }
                   }}
                   tabIndex={0}

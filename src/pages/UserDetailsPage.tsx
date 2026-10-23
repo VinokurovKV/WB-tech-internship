@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import {
   Alert,
@@ -10,7 +10,7 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 
 import { getUserById } from "../api/users";
 import type { User } from "../types/user";
@@ -21,9 +21,30 @@ const genderLabels: Record<string, string> = {
   Other: "Другой",
 };
 
+function formatAge(age: number) {
+  const lastTwoDigits = Math.abs(age) % 100;
+  const lastDigit = lastTwoDigits % 10;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return `${age} лет`;
+  if (lastDigit === 1) return `${age} год`;
+  if (lastDigit >= 2 && lastDigit <= 4) return `${age} года`;
+
+  return `${age} лет`;
+}
+
 interface DetailRowProps {
   label: string;
   value: string | number | undefined;
+}
+
+interface UserDetailsLocationState {
+  user?: User;
+}
+
+interface UserLoadResult {
+  id: string;
+  user: User | null;
+  error: boolean;
 }
 
 function DetailRow({ label, value }: DetailRowProps) {
@@ -67,38 +88,51 @@ function DetailRow({ label, value }: DetailRowProps) {
 export default function UserDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = location.state as UserDetailsLocationState | null;
+  const stateUser = locationState?.user;
+  const routeUser = stateUser?.id === id ? stateUser : null;
 
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [loadResult, setLoadResult] = useState<UserLoadResult | null>(null);
+  const currentLoadResult = loadResult?.id === id ? loadResult : null;
+  const user = routeUser ?? currentLoadResult?.user ?? null;
+  const loading = Boolean(id && !routeUser && !currentLoadResult);
+  const error = !id || currentLoadResult?.error === true;
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || routeUser) return;
 
     let active = true;
 
     getUserById(id)
       .then((data) => {
         if (active) {
-          setUser(data);
-          setError(false);
+          setLoadResult({ id, user: data, error: false });
         }
       })
       .catch(() => {
         if (active) {
-          setError(true);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
+          setLoadResult({ id, user: null, error: true });
         }
       });
 
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, routeUser]);
+
+  const handleBack = () => {
+    if (stateUser) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/", { replace: true });
+  };
 
   const initials = user
     ? `${user.firstName?.charAt(0) ?? ""}${user.lastName?.charAt(0) ?? ""}`.toUpperCase()
@@ -162,7 +196,7 @@ export default function UserDetailsPage() {
         >
           <IconButton
             aria-label="Вернуться к списку"
-            onClick={() => navigate("/")}
+            onClick={handleBack}
             sx={{
               position: "absolute",
               left: 16,
@@ -204,7 +238,7 @@ export default function UserDetailsPage() {
           >
             <IconButton
               aria-label="Вернуться к списку"
-              onClick={() => navigate("/")}
+              onClick={handleBack}
               sx={{
                 color: "#FFFFFF",
                 bgcolor: "rgba(255,255,255,0.12)",
@@ -364,7 +398,7 @@ export default function UserDetailsPage() {
               <DetailRow label="Фамилия" value={user.lastName} />
               <DetailRow label="Электронная почта" value={user.email} />
               <DetailRow label="Номер телефона" value={user.phoneNumber} />
-              <DetailRow label="Возраст" value={`${user.age} лет`} />
+              <DetailRow label="Возраст" value={formatAge(user.age)} />
               <DetailRow
                 label="Пол"
                 value={genderLabels[user.gender] ?? user.gender}

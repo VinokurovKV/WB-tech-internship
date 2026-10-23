@@ -12,17 +12,6 @@ export async function getUsers(page: number, limit: number): Promise<User[]> {
   return response.json();
 }
 
-export async function getUsersCount(): Promise<number> {
-  const response = await fetch(`${API_URL}/users`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch users count");
-  }
-
-  const users: User[] = await response.json();
-  return users.length;
-}
-
 export async function createUser(data: UserFormData): Promise<User> {
   const response = await fetch(`${API_URL}/users`, {
     method: "POST",

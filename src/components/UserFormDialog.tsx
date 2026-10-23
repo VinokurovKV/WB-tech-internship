@@ -1,7 +1,6 @@
 import { useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import {
-  Alert,
   Box,
   Button,
   Dialog,
@@ -25,6 +24,7 @@ interface UserFormDialogProps {
   initialValues?: UserFormData;
   onClose: () => void;
   onSubmit: (data: UserFormData) => Promise<void>;
+  onSubmitError: () => void;
 }
 
 const emptyForm: UserFormData = {
@@ -85,10 +85,10 @@ export default function UserFormDialog({
   initialValues,
   onClose,
   onSubmit,
+  onSubmitError,
 }: UserFormDialogProps) {
   const [form, setForm] = useState<UserFormData>(initialValues ?? emptyForm);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
 
   const handleChange = (field: keyof UserFormData, value: string | number) => {
     setForm((prev) => ({
@@ -100,14 +100,13 @@ export default function UserFormDialog({
   const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
-    setError(false);
 
     try {
       await onSubmit(form);
       onClose();
     } catch (error) {
       console.error("Failed to save user:", error);
-      setError(true);
+      onSubmitError();
     } finally {
       setLoading(false);
     }
@@ -214,12 +213,6 @@ export default function UserFormDialog({
             overflowY: "auto",
           }}
         >
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              Не удалось сохранить пользователя
-            </Alert>
-          )}
-
           <Grid container spacing={{ xs: 2, sm: 3 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth required>

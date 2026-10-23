@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import {
   Alert,
@@ -7,74 +8,100 @@ import {
   CircularProgress,
   Container,
   Fab,
+  Snackbar,
   Typography,
 } from "@mui/material";
+import { useNavigate, useSearchParams } from "react-router";
 
-import { createUser, getUsers, getUsersCount, updateUser } from "./api/users";
+import { createUser, updateUser } from "./api/users";
 import UsersTable from "./components/UsersTable";
 import UserFormDialog from "./components/UserFormDialog";
 import type { User, UserFormData } from "./types/user";
 
-function App() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [totalUsers, setTotalUsers] = useState(0);
+const rowsPerPageOptions = [10, 25, 50];
 
+function getPositiveInteger(value: string | null, fallback: number) {
+  const parsedValue = Number(value);
+
+  return Number.isInteger(parsedValue) && parsedValue > 0
+    ? parsedValue
+    : fallback;
+}
+
+interface AppProps {
+  allUsers: User[];
+  setAllUsers: Dispatch<SetStateAction<User[]>>;
+  loading: boolean;
+  error: boolean;
+  getScrollPosition: () => number;
+  onScrollPositionChange: (position: number) => void;
+}
+
+interface Notification {
+  severity: "success" | "error";
+  message: string;
+}
+
+function App({
+  allUsers,
+  setAllUsers,
+  loading,
+  error,
+  getScrollPosition,
+  onScrollPositionChange,
+}: AppProps) {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedRowsPerPage = getPositiveInteger(
+    searchParams.get("rowsPerPage"),
+    10,
+  );
+  const rowsPerPage = rowsPerPageOptions.includes(requestedRowsPerPage)
+    ? requestedRowsPerPage
+    : 10;
+  const page = getPositiveInteger(searchParams.get("page"), 1) - 1;
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [notification, setNotification] = useState<Notification | null>(null);
 
-  useEffect(() => {
-    let active = true;
+  const users = allUsers.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
 
-    getUsersCount()
-      .then((count) => {
-        if (active) setTotalUsers(count);
-      })
-      .catch(console.error);
+  const totalUsers = allUsers.length;
 
-    return () => {
-      active = false;
-    };
-  }, [refreshKey]);
+  useLayoutEffect(() => {
+    window.scrollTo(0, getScrollPosition());
+  }, [getScrollPosition]);
 
-  useEffect(() => {
-    let active = true;
-
-    getUsers(page + 1, rowsPerPage)
-      .then((data) => {
-        if (active) {
-          setUsers(data);
-          setError(false);
-        }
-      })
-      .catch(() => {
-        if (active) setError(true);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [page, rowsPerPage, refreshKey]);
+  const handleOpenUser = (user: User) => {
+    onScrollPositionChange(window.scrollY);
+    navigate(`/users/${user.id}`, {
+      state: {
+        user,
+      },
+    });
+  };
 
   const handlePageChange = (newPage: number) => {
-    setLoading(true);
-    setError(false);
-    setPage(newPage);
+    setSearchParams((params) => {
+      const nextParams = new URLSearchParams(params);
+
+      if (newPage === 0) nextParams.delete("page");
+      else nextParams.set("page", String(newPage + 1));
+
+      return nextParams;
+    });
   };
 
   const handleRowsPerPageChange = (value: number) => {
-    setLoading(true);
-    setError(false);
-    setRowsPerPage(value);
-    setPage(0);
+    setSearchParams((params) => {
+      const nextParams = new URLSearchParams(params);
+
+      nextParams.delete("page");
+      if (value === 10) nextParams.delete("rowsPerPage");
+      else nextParams.set("rowsPerPage", String(value));
+
+      return nextParams;
+    });
   };
 
   const handleAddUser = () => {
@@ -96,15 +123,20 @@ function App() {
     if (selectedUser) {
       const updatedUser = await updateUser(selectedUser.id, data);
 
-      setUsers((prev) =>
+      setAllUsers((prev) =>
         prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)),
       );
     } else {
-      await createUser(data);
-      setPage(0);
+      const createdUser = await createUser(data);
+
+      setAllUsers((prev) => [...prev, createdUser]);
+      handlePageChange(0);
     }
 
-    setRefreshKey((prev) => prev + 1);
+    setNotification({
+      severity: "success",
+      message: "Пользователь успешно сохранён",
+    });
   };
 
   return (
@@ -268,6 +300,7 @@ function App() {
               onPageChange={handlePageChange}
               onRowsPerPageChange={handleRowsPerPageChange}
               onEditUser={handleEditUser}
+              onOpenUser={handleOpenUser}
             />
           )}
         </Box>
@@ -292,8 +325,32 @@ function App() {
           }
           onClose={handleCloseDialog}
           onSubmit={handleSubmitUser}
+          onSubmitError={() =>
+            setNotification({
+              severity: "error",
+              message: "Не удалось сохранить пользователя",
+            })
+          }
         />
       )}
+
+      <Snackbar
+        open={notification !== null}
+        autoHideDuration={3000}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        onClose={(_, reason) => {
+          if (reason !== "clickaway") setNotification(null);
+        }}
+      >
+        <Alert
+          severity={notification?.severity ?? "success"}
+          variant="filled"
+          onClose={() => setNotification(null)}
+          sx={{ width: "100%" }}
+        >
+          {notification?.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
