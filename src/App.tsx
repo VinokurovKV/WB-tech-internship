@@ -286,7 +286,7 @@ function App() {
                   age: selectedUser.age,
                   gender: selectedUser.gender,
                   nationality: selectedUser.nationality,
-                  hobbies: selectedUser.hobbies,
+                  city: selectedUser.city,
                 }
               : undefined
           }

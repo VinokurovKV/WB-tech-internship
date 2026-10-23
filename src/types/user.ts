@@ -7,7 +7,7 @@ export interface User {
   age: number;
   gender: string;
   createdAt: string;
-  hobbies: string;
+  city: string;
   nationality: string;
 }
 

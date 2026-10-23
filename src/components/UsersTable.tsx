@@ -18,6 +18,8 @@ import {
 
 import type { User } from "../types/user";
 
+import { useNavigate } from "react-router";
+
 interface UsersTableProps {
   users: User[];
   totalUsers: number;
@@ -47,6 +49,8 @@ export default function UsersTable({
 }: UsersTableProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const navigate = useNavigate();
 
   return (
     <Paper
@@ -107,9 +111,25 @@ export default function UsersTable({
               users.map((user, index) => (
                 <TableRow
                   key={user.id}
+                  hover
+                  onClick={() => navigate(`/users/${user.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      navigate(`/users/${user.id}`);
+                    }
+                  }}
+                  tabIndex={0}
+                  aria-label={`Открыть профиль ${user.firstName} ${user.lastName}`}
                   sx={{
+                    cursor: "pointer",
                     transition: "background-color 0.15s",
-                    "&:hover": { bgcolor: "#FCF9FF" },
+                    "&:hover": {
+                      bgcolor: "#FCF9FF",
+                    },
+                    "&:focus-visible": {
+                      outline: "2px solid #8120D0",
+                      outlineOffset: -2,
+                    },
                   }}
                 >
                   <TableCell>
@@ -158,7 +178,11 @@ export default function UsersTable({
                     <IconButton
                       size="small"
                       aria-label={`Редактировать ${user.firstName} ${user.lastName}`}
-                      onClick={() => onEditUser(user)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onEditUser(user);
+                      }}
+                      onKeyDown={(event) => event.stopPropagation()}
                       sx={{
                         color: "#7C3AC6",
                         "&:hover": {

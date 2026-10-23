@@ -67,3 +67,13 @@ export async function updateUser(
 
   return response.json();
 }
+
+export async function getUserById(id: string): Promise<User> {
+  const response = await fetch(`${API_URL}/users/${id}`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch user");
+  }
+
+  return response.json();
+}

@@ -35,7 +35,7 @@ const emptyForm: UserFormData = {
   age: 0,
   gender: "",
   nationality: "",
-  hobbies: "",
+  city: "",
 };
 
 const inputStyles = {
@@ -355,11 +355,11 @@ export default function UserFormDialog({
 
             <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth>
-                <FormLabel sx={labelStyles}>Увлечения</FormLabel>
+                <FormLabel sx={labelStyles}>Город</FormLabel>
                 <OutlinedInput
-                  value={form.hobbies}
-                  onChange={(e) => handleChange("hobbies", e.target.value)}
-                  placeholder="Например, спорт, музыка"
+                  value={form.city}
+                  onChange={(e) => handleChange("city", e.target.value)}
+                  placeholder="Укажите город"
                   sx={inputStyles}
                 />
               </FormControl>
